@@ -1,0 +1,1103 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>同分母分數除法：思考鷹架與標準算式實驗室 (P.28)</title>
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-dark: #1d4ed8;
+      --bg: #f8fafc;
+      --panel: #ffffff;
+      --text: #0f172a;
+    }
+
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang TC", "Microsoft JhengHei", sans-serif;
+    }
+
+    body {
+      margin: 0;
+      padding: 16px;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .header-panel {
+      width: 100%;
+      max-width: 1020px;
+      background: var(--panel);
+      padding: 16px 20px;
+      border-radius: 16px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+      margin-bottom: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 22px;
+      color: #1e3a8a;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 8px;
+    }
+
+    .tab-btn {
+      padding: 8px 16px;
+      border: 2px solid #cbd5e1;
+      background: #fff;
+      border-radius: 999px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      color: #475569;
+      transition: all 0.2s;
+    }
+
+    .tab-btn.active {
+      border-color: var(--primary);
+      background: #eff6ff;
+      color: var(--primary);
+    }
+
+    .status-bar {
+      background: #f1f5f9;
+      border-left: 5px solid var(--primary);
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-size: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .scaffold-row {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      line-height: 1.6;
+    }
+
+    .choice-select {
+      font-size: 15px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 6px;
+      border: 2px solid #3b82f6;
+      background: white;
+      color: #1e3a8a;
+      cursor: pointer;
+      outline: none;
+    }
+
+    .choice-select.correct {
+      border-color: #16a34a;
+      background: #dcfce7;
+      color: #15803d;
+      pointer-events: none;
+    }
+
+    .feedback-msg {
+      font-size: 14px;
+      font-weight: 700;
+      margin-left: 4px;
+    }
+    .feedback-msg.err { color: #dc2626; }
+    .feedback-msg.ok { color: #15803d; }
+
+    .total-stat {
+      font-weight: 800;
+      color: #15803d;
+      font-size: 17px;
+      background: #dcfce7;
+      padding: 4px 12px;
+      border-radius: 8px;
+      align-self: flex-end;
+    }
+
+    /* 舞台主體 */
+    .stage {
+      width: 100%;
+      max-width: 1020px;
+      height: 640px;
+      background: #ffffff;
+      border-radius: 16px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+      position: relative;
+      overflow: hidden;
+      border: 2px solid #e2e8f0;
+    }
+
+    /* ====== 核心修復：水平均勻展開、絕不折行的算式看板 ====== */
+    .equation-board {
+      position: absolute;
+      top: 145px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: none;
+      flex-direction: row;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 16px 28px;
+      background: rgba(255, 255, 255, 0.98);
+      border: 3px solid #ef4444;
+      border-radius: 20px;
+      box-shadow: 0 10px 32px rgba(239, 68, 68, 0.2);
+      z-index: 80;
+      white-space: nowrap; /* 核心防護：強迫水平單行不換行 */
+      max-width: 95%;
+      overflow-x: auto;
+      animation: popIn 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    @keyframes popIn {
+      from { transform: translateX(-50%) scale(0.85); opacity: 0; }
+      to { transform: translateX(-50%) scale(1); opacity: 1; }
+    }
+
+    /* 運算子（+、-、×、÷、=） */
+    .math-op {
+      font-size: 40px;
+      font-weight: 900;
+      color: #dc2626;
+      line-height: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 2px;
+    }
+
+    /* 整數數字 */
+    .math-num {
+      font-size: 42px;
+      font-weight: 900;
+      color: #dc2626;
+      line-height: 1;
+      display: inline-flex;
+      align-items: center;
+    }
+
+    /* 單位標籤 (袋) */
+    .math-unit {
+      font-size: 28px;
+      font-weight: 800;
+      color: #dc2626;
+      margin-left: 4px;
+    }
+
+    /* 直式上下分數 */
+    .fraction {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      vertical-align: middle;
+      text-align: center;
+      color: #dc2626;
+      margin: 0 4px;
+    }
+
+    .fraction .num {
+      font-size: 34px;
+      font-weight: 900;
+      line-height: 1;
+      padding: 0 2px;
+    }
+
+    .fraction .bar {
+      border-top: 3.5px solid #dc2626;
+      width: 100%;
+      min-width: 28px;
+      margin: 3px 0;
+    }
+
+    .fraction .den {
+      font-size: 34px;
+      font-weight: 900;
+      line-height: 1;
+      padding: 0 2px;
+    }
+
+    /* 帶分數 */
+    .mixed-fraction {
+      display: inline-flex;
+      align-items: center;
+      color: #dc2626;
+    }
+
+    .mixed-fraction .whole {
+      font-size: 44px;
+      font-weight: 900;
+      margin-right: 4px;
+      line-height: 1;
+    }
+
+    /* 下方滾動裝袋區域 */
+    .packing-bay {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 240px;
+      background: #fffbeb;
+      border-top: 3px dashed #f59e0b;
+      padding: 8px 16px;
+      display: flex;
+      flex-direction: column;
+      z-index: 20;
+    }
+
+    .bay-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      font-weight: 700;
+      color: #b45309;
+      margin-bottom: 6px;
+    }
+
+    .bags-list {
+      display: flex;
+      gap: 16px;
+      height: 190px;
+      align-items: flex-start;
+      overflow-x: auto;
+      overflow-y: hidden;
+      padding: 4px 4px 10px 4px;
+      scroll-behavior: smooth;
+    }
+
+    .bags-list::-webkit-scrollbar {
+      height: 8px;
+    }
+    .bags-list::-webkit-scrollbar-thumb {
+      background: #fcd34d;
+      border-radius: 4px;
+    }
+    .bags-list::-webkit-scrollbar-thumb:hover {
+      background: #f59e0b;
+    }
+
+    .bag-container {
+      flex: 0 0 190px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .target-bag {
+      width: 100%;
+      height: 130px;
+      border: 2px dashed #d97706;
+      border-radius: 12px;
+      background: #ffffff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 6px;
+      position: relative;
+      transition: background-color 0.2s, border-color 0.2s;
+    }
+
+    .target-bag.full {
+      border: 2px solid #16a34a;
+      background: #f0fdf4;
+    }
+
+    .target-bag.half {
+      border: 2px dashed #f59e0b;
+      background: #fffdf5;
+    }
+
+    .target-bag.overflow {
+      border: 2px solid #ef4444;
+      background: #fef2f2;
+    }
+
+    .bag-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #b45309;
+      margin-bottom: 2px;
+    }
+
+    .bag-content-slot {
+      width: 100%;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      gap: 4px;
+    }
+
+    .bag-badge-outside {
+      width: 100%;
+      text-align: center;
+      font-size: 13px;
+      font-weight: 800;
+      padding: 3px 6px;
+      border-radius: 6px;
+      transition: all 0.2s;
+    }
+
+    .bag-badge-outside.empty { color: #94a3b8; background: #f1f5f9; }
+    .bag-badge-outside.full { color: #15803d; background: #dcfce7; border: 1px solid #86efac; }
+    .bag-badge-outside.half { color: #b45309; background: #fef3c7; border: 1px solid #fde68a; }
+    .bag-badge-outside.overflow { color: #dc2626; background: #fee2e2; border: 1px solid #fca5a5; }
+
+    /* 積木群組物件 */
+    .brick-group {
+      display: inline-flex;
+      background: #ffffff;
+      border: 2px solid #2563eb;
+      border-radius: 8px;
+      box-shadow: 0 4px 10px rgba(37, 99, 235, 0.2);
+      cursor: grab;
+      touch-action: none;
+      z-index: 100;
+    }
+
+    .brick-group.free-floating {
+      position: absolute;
+    }
+
+    .brick-group.docked-in-bag {
+      position: relative !important;
+      left: 0 !important;
+      top: 0 !important;
+      transform: scale(0.92);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      z-index: 10;
+    }
+
+    .brick-group:active {
+      cursor: grabbing;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.25);
+      z-index: 999 !important;
+    }
+
+    .brick-group.hover-target {
+      border-color: #f59e0b;
+      box-shadow: 0 0 14px rgba(245, 158, 11, 0.7);
+    }
+
+    .brick-cell {
+      width: 50px;
+      height: 50px;
+      background: #3b82f6;
+      color: #ffffff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border-right: 2px dashed #93c5fd;
+      font-weight: 700;
+      font-size: 12px;
+      pointer-events: none;
+    }
+
+    .brick-cell:last-child {
+      border-right: none;
+    }
+
+    .solid-brick {
+      width: 350px;
+      height: 54px;
+      background: #2563eb;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      border-radius: 6px;
+      pointer-events: none;
+    }
+
+    .group-tag {
+      position: absolute;
+      top: -24px;
+      left: 0;
+      background: #1e3a8a;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 4px;
+      white-space: nowrap;
+      pointer-events: none;
+    }
+
+    .split-btn {
+      position: absolute;
+      top: -24px;
+      right: 0;
+      background: #ef4444;
+      color: white;
+      border: none;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 4px;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(239, 68, 68, 0.3);
+    }
+
+    .split-btn:hover {
+      background: #dc2626;
+    }
+
+    .split-btn.glow-pulse {
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+      70% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+      100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+    }
+
+    .bottom-bar {
+      margin-top: 12px;
+      display: flex;
+      gap: 12px;
+    }
+
+    .btn {
+      padding: 8px 20px;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      background: #e2e8f0;
+      color: #1e293b;
+    }
+
+    .btn:hover { background: #cbd5e1; }
+  </style>
+</head>
+<body>
+
+<div class="header-panel">
+  <div class="title-row">
+    <h1>課本 28 頁：同分母分數除法（思維鷹架實驗室）</h1>
+    <div class="tabs">
+      <button class="tab-btn active" onclick="setPreset(0)">第 (1) 關：7 ÷ 2</button>
+      <button class="tab-btn" onclick="setPreset(1)">第 (2) 關：7/9 ÷ 2/9</button>
+      <button class="tab-btn" onclick="setPreset(2)">第 (3) 關：7/5 ÷ 2/5</button>
+    </div>
+  </div>
+
+  <div class="status-bar" id="scaffoldBox">
+    <div class="scaffold-row" id="step1Row">
+      <span>1️⃣ 袋子規格：每 <b id="divisorLabel">2 kg</b> 裝 1 袋，也就是每袋需要 2 塊</span>
+      <select class="choice-select" id="unitSelect" onchange="checkStep1()">
+        <option value="">-- 請選擇刻度 --</option>
+      </select>
+      <span class="feedback-msg" id="step1Feedback"></span>
+    </div>
+
+    <div class="scaffold-row" id="step2Row" style="display: none;">
+      <span>2️⃣ 找好刻度了！那我們要把桌上的 <b id="dividendLabel">7 kg</b> 看成幾塊呢？</span>
+      <select class="choice-select" id="countSelect" onchange="checkStep2()">
+        <option value="">-- 請選擇幾塊 --</option>
+      </select>
+      <span class="feedback-msg" id="step2Feedback"></span>
+    </div>
+
+    <div class="total-stat" id="totalStatText">已裝：0 袋</div>
+  </div>
+</div>
+
+<div class="stage" id="stage">
+  <!-- ====== 答案算式看板 (完成時浮現，強制水平單行不折行) ====== -->
+  <div class="equation-board" id="equationBoard"></div>
+
+  <!-- 下方滾動裝袋區域 -->
+  <div class="packing-bay" id="packingBay">
+    <div class="bay-header">
+      <span>📦 袋子分裝槽（每袋裝滿 2 塊算 1 整袋）</span>
+      <span style="color:#d97706;">提示：滿 2 塊是 1 整袋，落單 1 塊是 1/2 袋</span>
+    </div>
+    <div class="bags-list" id="bagsList"></div>
+  </div>
+</div>
+
+<div class="bottom-bar">
+  <button class="btn" onclick="resetStage()">🔄 重新開始本關</button>
+</div>
+
+<script>
+  function renderFractionHtml(num, den) {
+    return `
+      <div class="fraction">
+        <div class="num">${num}</div>
+        <div class="bar"></div>
+        <div class="den">${den}</div>
+      </div>
+    `;
+  }
+
+  function renderMixedFractionHtml(whole, num, den) {
+    return `
+      <div class="mixed-fraction">
+        <div class="whole">${whole}</div>
+        ${renderFractionHtml(num, den)}
+      </div>
+    `;
+  }
+
+  const presets = [
+    {
+      name: "7 ÷ 2",
+      totalDisplay: "7 kg",
+      denom: 1,
+      unitLabel: "1 kg",
+      divisorStr: "2 kg",
+      dividendStr: "7 kg",
+      optionsUnit: ["1 kg", "2 kg", "1/2 kg", "7 kg"],
+      correctUnit: "1 kg",
+      optionsCount: ["2 塊", "7 塊", "9 塊", "14 塊"],
+      correctCount: "7 塊",
+      reqCount: 2,
+      equationHtml: `
+        <span class="math-num">7</span>
+        <span class="math-op">÷</span>
+        <span class="math-num">2</span>
+        <span class="math-op">=</span>
+        ${renderFractionHtml(7, 2)}
+        <span class="math-op">=</span>
+        ${renderMixedFractionHtml(3, 1, 2)}
+        <span class="math-unit">(袋)</span>
+      `
+    },
+    {
+      name: "7/9 ÷ 2/9",
+      totalDisplay: "7/9 kg",
+      denom: 9,
+      unitLabel: "1/9 kg",
+      divisorStr: "2/9 kg",
+      dividendStr: "7/9 kg",
+      optionsUnit: ["1/5 kg", "1/9 kg", "1/7 kg", "1/18 kg"],
+      correctUnit: "1/9 kg",
+      optionsCount: ["2 塊", "7 塊", "9 塊", "14 塊"],
+      correctCount: "7 塊",
+      reqCount: 2,
+      equationHtml: `
+        ${renderFractionHtml(7, 9)}
+        <span class="math-op">÷</span>
+        ${renderFractionHtml(2, 9)}
+        <span class="math-op">=</span>
+        <span class="math-num">7</span>
+        <span class="math-op">÷</span>
+        <span class="math-num">2</span>
+        <span class="math-op">=</span>
+        ${renderFractionHtml(7, 2)}
+        <span class="math-op">=</span>
+        ${renderMixedFractionHtml(3, 1, 2)}
+        <span class="math-unit">(袋)</span>
+      `
+    },
+    {
+      name: "7/5 ÷ 2/5",
+      totalDisplay: "7/5 kg",
+      denom: 5,
+      unitLabel: "1/5 kg",
+      divisorStr: "2/5 kg",
+      dividendStr: "7/5 kg",
+      optionsUnit: ["1/2 kg", "1/5 kg", "1/10 kg", "1/7 kg"],
+      correctUnit: "1/5 kg",
+      optionsCount: ["2 塊", "5 塊", "7 塊", "10 塊"],
+      correctCount: "7 塊",
+      reqCount: 2,
+      equationHtml: `
+        ${renderFractionHtml(7, 5)}
+        <span class="math-op">÷</span>
+        ${renderFractionHtml(2, 5)}
+        <span class="math-op">=</span>
+        <span class="math-num">7</span>
+        <span class="math-op">÷</span>
+        <span class="math-num">2</span>
+        <span class="math-op">=</span>
+        ${renderFractionHtml(7, 2)}
+        <span class="math-op">=</span>
+        ${renderMixedFractionHtml(3, 1, 2)}
+        <span class="math-unit">(袋)</span>
+      `
+    }
+  ];
+
+  let currentPreset = 0;
+  let groups = [];
+  let activeDrag = null;
+  let scaffoldStep = 0;
+
+  function setPreset(idx) {
+    currentPreset = idx;
+    document.querySelectorAll('.tab-btn').forEach((btn, i) => {
+      btn.classList.toggle('active', i === idx);
+    });
+    resetStage();
+  }
+
+  function resetStage() {
+    scaffoldStep = 0;
+    const config = presets[currentPreset];
+
+    const eqBoard = document.getElementById('equationBoard');
+    eqBoard.style.display = 'none';
+    eqBoard.innerHTML = config.equationHtml;
+
+    document.getElementById('divisorLabel').innerText = config.divisorStr;
+    document.getElementById('dividendLabel').innerText = config.dividendStr;
+
+    const uSelect = document.getElementById('unitSelect');
+    uSelect.className = 'choice-select';
+    uSelect.innerHTML = '<option value="">-- 請選擇刻度 --</option>' + 
+      config.optionsUnit.map(o => `<option value="${o}">${o}</option>`).join('');
+    document.getElementById('step1Feedback').innerText = '';
+
+    document.getElementById('step2Row').style.display = 'none';
+    const cSelect = document.getElementById('countSelect');
+    cSelect.className = 'choice-select';
+    cSelect.innerHTML = '<option value="">-- 請選擇幾塊 --</option>' + 
+      config.optionsCount.map(o => `<option value="${o}">${o}</option>`).join('');
+    document.getElementById('step2Feedback').innerText = '';
+
+    groups = [{
+      id: 'grp_init_' + Date.now(),
+      count: 7,
+      x: 60,
+      y: 70,
+      dockedBagId: null
+    }];
+
+    renderBags();
+    renderGroups();
+  }
+
+  function checkStep1() {
+    const config = presets[currentPreset];
+    const uSelect = document.getElementById('unitSelect');
+    const feedback = document.getElementById('step1Feedback');
+
+    if (uSelect.value === config.correctUnit) {
+      uSelect.classList.add('correct');
+      feedback.innerText = '✅ 答對了！以 ' + config.correctUnit + ' 為刻度！';
+      feedback.className = 'feedback-msg ok';
+
+      scaffoldStep = 1;
+      renderGroups();
+      document.getElementById('step2Row').style.display = 'flex';
+    } else if (uSelect.value !== '') {
+      feedback.innerText = '❌ 再看一眼除數的分母是多少喔！';
+      feedback.className = 'feedback-msg err';
+    }
+  }
+
+  function checkStep2() {
+    const config = presets[currentPreset];
+    const cSelect = document.getElementById('countSelect');
+    const feedback = document.getElementById('step2Feedback');
+
+    if (cSelect.value === config.correctCount) {
+      cSelect.classList.add('correct');
+      feedback.innerText = '🎉 太棒了！有 7 塊 ' + config.correctUnit + '。請按下方紅色按鈕切開米磚！';
+      feedback.className = 'feedback-msg ok';
+
+      scaffoldStep = 2;
+      renderGroups();
+    } else if (cSelect.value !== '') {
+      feedback.innerText = '❌ 想想看，' + config.dividendStr + ' 裡面包含幾個 ' + config.correctUnit + '？';
+      feedback.className = 'feedback-msg err';
+    }
+  }
+
+  function renderBags() {
+    const list = document.getElementById('bagsList');
+    list.innerHTML = '';
+
+    for (let i = 1; i <= 4; i++) {
+      const container = document.createElement('div');
+      container.className = 'bag-container';
+
+      const bag = document.createElement('div');
+      bag.className = 'target-bag';
+      bag.id = 'bag_' + i;
+      bag.innerHTML = `
+        <div class="bag-title">第 ${i} 袋</div>
+        <div class="bag-content-slot" id="slot_bag_${i}">
+          <div style="font-size:22px;opacity:0.25;">🛍️</div>
+        </div>
+      `;
+
+      const badgeOutside = document.createElement('div');
+      badgeOutside.className = 'bag-badge-outside empty';
+      badgeOutside.id = 'bag_badge_' + i;
+      badgeOutside.innerText = '未裝入';
+
+      container.appendChild(bag);
+      container.appendChild(badgeOutside);
+      list.appendChild(container);
+    }
+  }
+
+  function renderGroups() {
+    const stage = document.getElementById('stage');
+    document.querySelectorAll('.brick-group').forEach(el => el.remove());
+
+    const config = presets[currentPreset];
+
+    groups.forEach(g => {
+      const div = document.createElement('div');
+      div.className = 'brick-group';
+      div.id = g.id;
+
+      const tag = document.createElement('div');
+      tag.className = 'group-tag';
+      if (config.denom === 1) {
+        tag.innerText = `總重：${g.count} kg`;
+      } else {
+        tag.innerText = `總重：${g.count}/${config.denom} kg`;
+      }
+      div.appendChild(tag);
+
+      if (scaffoldStep === 0) {
+        const solid = document.createElement('div');
+        solid.className = 'solid-brick';
+        solid.innerText = `完整大米磚（${config.dividendStr}）`;
+        div.appendChild(solid);
+
+      } else if (scaffoldStep === 1 || scaffoldStep === 2) {
+        for (let c = 0; c < g.count; c++) {
+          const cell = document.createElement('div');
+          cell.className = 'brick-cell';
+          cell.innerHTML = `<span>${config.unitLabel}</span>`;
+          div.appendChild(cell);
+        }
+
+        if (scaffoldStep === 2) {
+          const splitBtn = document.createElement('button');
+          splitBtn.className = 'split-btn glow-pulse';
+          splitBtn.innerHTML = '✂️ 一鍵切開米磚';
+          splitBtn.addEventListener('pointerdown', (e) => {
+            e.stopPropagation();
+            performSliceAll();
+          });
+          div.appendChild(splitBtn);
+        }
+
+      } else {
+        if (g.count > 1) {
+          const splitBtn = document.createElement('button');
+          splitBtn.className = 'split-btn';
+          splitBtn.innerHTML = '✂️ 拆開';
+          splitBtn.addEventListener('pointerdown', (e) => {
+            e.stopPropagation();
+            splitGroup(g.id);
+          });
+          div.appendChild(splitBtn);
+        }
+
+        for (let c = 0; c < g.count; c++) {
+          const cell = document.createElement('div');
+          cell.className = 'brick-cell';
+          cell.innerHTML = `<span>${config.unitLabel}</span>`;
+          div.appendChild(cell);
+        }
+      }
+
+      if (scaffoldStep === 3) {
+        bindDrag(div, g);
+      }
+
+      if (g.dockedBagId) {
+        div.classList.add('docked-in-bag');
+        const slot = document.getElementById('slot_' + g.dockedBagId);
+        if (slot) {
+          slot.querySelector('div')?.remove();
+          slot.appendChild(div);
+        } else {
+          div.classList.add('free-floating');
+          div.style.left = g.x + 'px';
+          div.style.top = g.y + 'px';
+          stage.appendChild(div);
+        }
+      } else {
+        div.classList.add('free-floating');
+        div.style.left = g.x + 'px';
+        div.style.top = g.y + 'px';
+        stage.appendChild(div);
+      }
+    });
+
+    inspectBags();
+  }
+
+  function performSliceAll() {
+    scaffoldStep = 3;
+    groups = [];
+    for (let i = 0; i < 7; i++) {
+      groups.push({
+        id: 'grp_' + Date.now() + '_' + i + '_' + Math.random(),
+        count: 1,
+        x: 50 + (i % 4) * 80,
+        y: 60 + Math.floor(i / 4) * 85,
+        dockedBagId: null
+      });
+    }
+    renderGroups();
+  }
+
+  function splitGroup(groupId) {
+    const idx = groups.findIndex(g => g.id === groupId);
+    if (idx === -1) return;
+    const item = groups[idx];
+    const total = item.count;
+    const baseDocked = item.dockedBagId;
+
+    groups.splice(idx, 1);
+
+    for (let i = 0; i < total; i++) {
+      groups.push({
+        id: 'grp_' + Date.now() + '_' + i + '_' + Math.random(),
+        count: 1,
+        x: baseDocked ? (40 + (i % 4) * 75) : Math.min(Math.max(item.x + (i % 4) * 75, 20), 860),
+        y: baseDocked ? (60 + Math.floor(i / 4) * 85) : Math.min(item.y + Math.floor(i / 4) * 85, 290),
+        dockedBagId: null
+      });
+    }
+
+    renderGroups();
+  }
+
+  function bindDrag(el, gData) {
+    let startX = 0, startY = 0;
+    let initialX = 0, initialY = 0;
+
+    el.addEventListener('pointerdown', (e) => {
+      activeDrag = gData;
+      startX = e.clientX;
+      startY = e.clientY;
+
+      if (gData.dockedBagId) {
+        const rect = el.getBoundingClientRect();
+        const stageRect = document.getElementById('stage').getBoundingClientRect();
+        gData.x = rect.left - stageRect.left;
+        gData.y = rect.top - stageRect.top;
+        gData.dockedBagId = null;
+
+        el.classList.remove('docked-in-bag');
+        el.classList.add('free-floating');
+        document.getElementById('stage').appendChild(el);
+      }
+
+      initialX = gData.x;
+      initialY = gData.y;
+      el.style.left = initialX + 'px';
+      el.style.top = initialY + 'px';
+
+      el.setPointerCapture(e.pointerId);
+      el.style.zIndex = 1000;
+    });
+
+    el.addEventListener('pointermove', (e) => {
+      if (activeDrag !== gData) return;
+      let newX = initialX + (e.clientX - startX);
+      let newY = initialY + (e.clientY - startY);
+
+      newX = Math.max(10, Math.min(newX, 1000 - el.offsetWidth));
+      newY = Math.max(10, Math.min(newY, 610 - el.offsetHeight));
+
+      gData.x = newX;
+      gData.y = newY;
+      el.style.left = newX + 'px';
+      el.style.top = newY + 'px';
+
+      checkOverlap(el);
+    });
+
+    el.addEventListener('pointerup', (e) => {
+      if (activeDrag !== gData) return;
+      el.releasePointerCapture(e.pointerId);
+      activeDrag = null;
+      el.style.zIndex = 100;
+      handleDrop(gData, el);
+    });
+  }
+
+  function checkOverlap(currentEl) {
+    const curRect = currentEl.getBoundingClientRect();
+    const curCenter = { x: curRect.left + curRect.width / 2, y: curRect.top + curRect.height / 2 };
+
+    document.querySelectorAll('.brick-group.free-floating').forEach(otherEl => {
+      if (otherEl.id === currentEl.id) return;
+      const oRect = otherEl.getBoundingClientRect();
+      const oCenter = { x: oRect.left + oRect.width / 2, y: oRect.top + oRect.height / 2 };
+
+      const dx = Math.abs(curCenter.x - oCenter.x);
+      const dy = Math.abs(curCenter.y - oCenter.y);
+      const thresholdX = (curRect.width + oRect.width) / 2 + 25;
+      const thresholdY = (curRect.height + oRect.height) / 2 + 25;
+
+      if (dx < thresholdX && dy < thresholdY) {
+        otherEl.classList.add('hover-target');
+      } else {
+        otherEl.classList.remove('hover-target');
+      }
+    });
+  }
+
+  function handleDrop(dragged, el) {
+    const draggedRect = el.getBoundingClientRect();
+    const draggedCenter = {
+      x: draggedRect.left + draggedRect.width / 2,
+      y: draggedRect.top + draggedRect.height / 2
+    };
+
+    let targetBag = null;
+    document.querySelectorAll('.target-bag').forEach(bagEl => {
+      const bagRect = bagEl.getBoundingClientRect();
+      if (
+        draggedCenter.x >= bagRect.left &&
+        draggedCenter.x <= bagRect.right &&
+        draggedCenter.y >= bagRect.top &&
+        draggedCenter.y <= bagRect.bottom
+      ) {
+        targetBag = bagEl;
+      }
+    });
+
+    if (targetBag) {
+      const bagId = targetBag.id;
+      const existingInBag = groups.find(g => g.dockedBagId === bagId && g.id !== dragged.id);
+      if (existingInBag) {
+        existingInBag.count += dragged.count;
+        groups = groups.filter(g => g.id !== dragged.id);
+      } else {
+        dragged.dockedBagId = bagId;
+      }
+      renderGroups();
+      return;
+    }
+
+    let targetGroup = null;
+    let minDistance = Infinity;
+
+    document.querySelectorAll('.brick-group.free-floating').forEach(otherEl => {
+      if (otherEl.id === dragged.id) return;
+      const oRect = otherEl.getBoundingClientRect();
+      const oCenter = { x: oRect.left + oRect.width / 2, y: oRect.top + oRect.height / 2 };
+
+      const dx = Math.abs(draggedCenter.x - oCenter.x);
+      const dy = Math.abs(draggedCenter.y - oCenter.y);
+      const thresholdX = (draggedRect.width + oRect.width) / 2 + 25;
+      const thresholdY = (draggedRect.height + oRect.height) / 2 + 25;
+
+      if (dx < thresholdX && dy < thresholdY) {
+        const dist = Math.hypot(dx, dy);
+        if (dist < minDistance) {
+          minDistance = dist;
+          targetGroup = groups.find(g => g.id === otherEl.id);
+        }
+      }
+    });
+
+    if (targetGroup) {
+      targetGroup.count += dragged.count;
+      groups = groups.filter(g => g.id !== dragged.id);
+    }
+
+    renderGroups();
+  }
+
+  function inspectBags() {
+    const config = presets[currentPreset];
+    const bagElements = document.querySelectorAll('.target-bag');
+    let totalScore = 0;
+
+    bagElements.forEach((bagEl, index) => {
+      const bagId = bagEl.id;
+      const badge = document.getElementById(`bag_badge_${index + 1}`);
+      bagEl.className = 'target-bag';
+
+      let insideCount = 0;
+      groups.forEach(g => {
+        if (g.dockedBagId === bagId) {
+          insideCount += g.count;
+        }
+      });
+
+      if (insideCount === 0) {
+        badge.innerText = "未裝入";
+        badge.className = "bag-badge-outside empty";
+      } else if (insideCount === config.reqCount) {
+        bagEl.classList.add('full');
+        badge.innerText = "剛好 1 整袋！";
+        badge.className = "bag-badge-outside full";
+        totalScore += 1;
+      } else if (insideCount === 1) {
+        bagEl.classList.add('half');
+        badge.innerText = "只裝了 1/2 袋";
+        badge.className = "bag-badge-outside half";
+        totalScore += 0.5;
+      } else {
+        bagEl.classList.add('overflow');
+        badge.innerText = `超重 (${insideCount} 塊)`;
+        badge.className = "bag-badge-outside overflow";
+      }
+    });
+
+    const statText = document.getElementById('totalStatText');
+    const eqBoard = document.getElementById('equationBoard');
+
+    if (totalScore === 0) {
+      statText.innerText = "已裝：0 袋";
+      eqBoard.style.display = 'none';
+    } else if (totalScore === 3.5) {
+      statText.innerText = "🎉 完美完成：3 又 1/2 袋（7/2 袋）！";
+      eqBoard.style.display = 'flex';
+    } else {
+      const whole = Math.floor(totalScore);
+      const hasHalf = totalScore % 1 !== 0;
+      let text = whole > 0 ? `${whole} ` : "";
+      if (hasHalf) text += "又 1/2";
+      statText.innerText = `目前已裝：${text} 袋`;
+      eqBoard.style.display = 'none';
+    }
+  }
+
+  setPreset(0);
+</script>
+
+</body>
+</html>
